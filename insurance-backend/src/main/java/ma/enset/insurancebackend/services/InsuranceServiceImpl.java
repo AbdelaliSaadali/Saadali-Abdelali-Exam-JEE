@@ -75,13 +75,21 @@ public class InsuranceServiceImpl implements InsuranceService {
 
     @Override
     public void deleteCustomer(Long customerId) {
+        List<InsuranceContract> contracts = contractRepository.findByCustomerId(customerId);
+
+        contracts.forEach(contract -> {
+            paymentRepository.findByContractId(contract.getId())
+                    .forEach(payment -> paymentRepository.delete(payment));
+            contractRepository.delete(contract);
+        });
+
         customerRepository.deleteById(customerId);
     }
 
-    @Override
-    public List<CustomerDTO> searchCustomers(String keyword) {
-        return customerRepository.findByNameContainsIgnoreCase(keyword).stream().map(customer -> dtoMapper.fromCustomer(customer)).collect(Collectors.toList());
-    }
+        @Override
+        public List<CustomerDTO> searchCustomers(String keyword) {
+            return customerRepository.findByNameContainsIgnoreCase(keyword).stream().map(customer -> dtoMapper.fromCustomer(customer)).collect(Collectors.toList());
+        }
 
     @Override
     public CarInsuranceContractDTO saveCarContract(CreateCarContractDTO dto) throws CustomerNotFoundException {
@@ -172,6 +180,9 @@ public class InsuranceServiceImpl implements InsuranceService {
 
     @Override
     public void deleteContract(String contractId) {
+        paymentRepository.findByContractId(contractId)
+                .forEach(payment -> paymentRepository.delete(payment));
+
         contractRepository.deleteById(contractId);
     }
 
